@@ -1,22 +1,18 @@
 # APIs Documentation
 
-## Get all films
+## Entity: Film
 
-* `GET /api/films`
-* **Description**: Get the full list of films
-* **Request body**: _None_
-* **Response**: `200 OK` (success)
-* **Response body**: Array of objects, each describing one film. Note that absence
-of values is represented as null value in json.
+A film object is represented in JSON as follows:
 
-``` json
-[
-    { "id": 1, "title": "Pulp Fiction", "favorite": 1, "watchDate": "2023-03-11" "rating": null, },
-    ..
-]
+```json
+{
+  "id": 1,
+  "title": "Pulp Fiction",
+  "favorite": 1,
+  "watchDate": "2023-03-11",
+  "rating": null
+}
 ```
-
-* **Error Responses:** `500 Internal Server Error` (generic error)
 
 ## Get a film by `id`
 
@@ -46,6 +42,14 @@ of values is represented as null value in json.
     ..
 ]
 ```
+
+* **Query parameters**:
+  * filter, allowed values:
+    * _favorite_: only films marked as favorite
+    * _best_: only films with rating equal to 5
+    * _lastmonth_: only films watched in the last 30 days
+    * _unseen_: only films with watchDate equal to null
+    * _all_: all films
 
 * **Error Responses:** `422 Unprocessable Entity` if the query parameters fail formal validation checks.
 
