@@ -1,24 +1,7 @@
-/*
- * Web Applications
- * Lab 1 - Exercise 2
- */
-
 import dayjs from "dayjs";
 import sqlite from "sqlite3";
-import express from 'express';
-import morgan from 'morgan';
 
-const app = express();
-
-// set-up the middlewares
-app.use(morgan('dev'));
-app.use(express.json());  // To automatically decode incoming json
-
-app.get('/', (req, res) => {
-    res.send('Hello!');
-});
-
-function Film(id, title, isFavorite = false, watchDate, rating) {
+export function Film(id, title, isFavorite = false, watchDate, rating) {
 	this.id = id;
 	this.title = title;
 	this.favorite = isFavorite;
@@ -44,7 +27,7 @@ function Film(id, title, isFavorite = false, watchDate, rating) {
 	};
 }
 
-function FilmLibrary() {
+export function FilmLibrary() {
 	// open the database connection
 	const db = new sqlite.Database("films.db", (err) => {
 		if (err) throw err;
@@ -56,6 +39,32 @@ function FilmLibrary() {
 		} catch (error) {
 			console.error(`Impossible to close the database! ${error}`);
 		}
+	};
+
+	this.getFilm = (id) => {
+		return new Promise((resolve, reject) => {
+			const query = "SELECT * FROM films WHERE id = ?";
+
+			// db.get is used to retrieve a single row from the database, since id is unique
+			db.get(query, [id], (err, row) => {
+				if (err) {
+					reject(err);
+				} else if (!row) {
+					// If the row does not exist, resolve with an error message (or we could reject with an error, but in this case we want to handle it as a normal case, not as an exception)
+					resolve({ error: "Film non trovato" });
+				} else {
+					// If the row exists, create and resolve with the single Film object
+					const film = new Film(
+						row.id,
+						row.title,
+						row.favorite == 1,
+						row.watchdate,
+						row.rating,
+					);
+					resolve(film);
+				}
+			});
+		});
 	};
 
 	this.getAll = () => {
@@ -216,105 +225,3 @@ function FilmLibrary() {
 		});
 	};
 }
-
-async function main() {
-	const library = new FilmLibrary();
-
-	try {
-		console.log("***Library***");
-		const films = await library.getAll();
-
-		films.forEach((el) => {
-			console.log(el.toString());
-		});
-
-		console.log("\n***Favorite Library***");
-		const favorite = await library.getFavorites();
-		favorite.forEach((el) => {
-			console.log(el.toString());
-		});
-
-		console.log("\n***Watched Today***");
-		const watchedToday = await library.getWatchedToday();
-		watchedToday.forEach((el) => {
-			console.log(el.toString());
-		});
-
-		console.log("\n***Earlier Than***");
-		const date = dayjs("2023-03-19");
-		const earlierThan = await library.getBeforeThan(date);
-		earlierThan.forEach((el) => {
-			console.log(el.toString());
-		});
-
-		console.log("\n***Rating Filtering***");
-		const rating = 4;
-		const rateGreater = await library.getRateGreater(rating);
-		rateGreater.forEach((el) => {
-			console.log(el.toString());
-		});
-
-		console.log("\n***String Filtering***");
-		const string = "war";
-		const stringFiltering = await library.getWithWord(string);
-		stringFiltering.forEach((el) => {
-			console.log(el.toString());
-		});
-	} catch (err) {
-		console.log(err);
-	}
-
-	// inserting a new film
-	let newFilmId = -1;
-	console.log(`\n****** Adding a new movie: ******`);
-	const newFilm = new Film(
-		newFilmId,
-		"Fast & Furious",
-		false,
-		dayjs().toISOString(),
-		2,
-	);
-	try {
-		newFilmId = await library.addFilm(newFilm);
-		console.log(`New film inserted! ID: ${newFilmId}.`);
-	} catch (error) {
-		console.error(`Impossible to insert a new movie! ${error}`);
-	}
-
-	// delete a film
-	console.log(`\n****** Deleting the movie with ID '${newFilmId}': ******`);
-	try {
-		const deleted = await library.deleteFilm(newFilmId);
-		if (deleted) console.log("Movie successfully deleted!");
-		else console.error(`There is no movie to delete with id: ${newFilmId}`);
-	} catch (error) {
-		console.error(
-			`Impossible to delete the movie with id: ${newFilmId}! ${error}`,
-		);
-	}
-	// reset all the whatchdate
-	console.log(`\n****** Resetting all the watch dates: ******`);
-	try {
-		const numAffected = await library.resetWatchDate();
-		console.log(
-			`Watch dates resetted! Number of affected records: ${numAffected}`,
-		);
-	} catch (error) {
-		console.error(`Impossible to reset watch dates! ${error}`);
-	}
-
-	// printing updated movies
-	console.log("\n****** All the movies after the updates: ******");
-	const filmUpdated = await library.getAll();
-	if (filmUpdated.length === 0) console.log("No movies yet, try later.");
-	else filmUpdated.forEach((film) => console.log(`${film}`));
-
-	library.closeDB();
-}
-
-// Additional instruction to enable debug
-debugger;
-
-// Starting express server on 3001 port
-app.listen(3001, ()=>{console.log('Server ready');})
-main();
