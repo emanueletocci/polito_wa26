@@ -40,11 +40,11 @@ DELETE http://localhost:3001/api/films/6 HTTP/1.1
 
 
 ## Update a film.
-PUT http://localhost:3001/api/films/7 HTTP/1.1
+PUT http://localhost:3001/api/films/18 HTTP/1.1
 content-type: application/json
 
 {
-    "id": 7,
+    "id": 18,
     "title": "The Hangover",
     "favorite": 0,
     "rating": 1
