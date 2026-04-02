@@ -1,227 +1,180 @@
+
+/* Data Access Object (DAO) module for accessing films data */
 import dayjs from "dayjs";
-import sqlite from "sqlite3";
+import db from './db.mjs';
 
-export function Film(id, title, isFavorite = false, watchDate, rating) {
-	this.id = id;
-	this.title = title;
-	this.favorite = isFavorite;
-	this.rating = rating;
-	// saved as dayjs object only if watchDate is truthy
-	this.watchDate = watchDate && dayjs(watchDate);
+const filterValues = {
+  'favorite': { filterFunction: film => film.favorite },
+  'best': { filterFunction: film => film.rating >= 5 },
+  'lastmonth': { filterFunction: film => isSeenLastMonth(film) },
+  'unseen': { filterFunction: film => film.watchDate ? false : true },
+  'all': { filterFunction: film => true },
+};
 
-	this.toString = () => {
-		return (
-			`Id: ${this.id}, ` +
-			`Title: ${this.title}, Favorite: ${this.favorite}, ` +
-			`Watch date: ${this.formatWatchDate("MMMM D, YYYY")}, ` +
-			`Score: ${this.formatRating()}`
-		);
-	};
 
-	this.formatWatchDate = (format) => {
-		return this.watchDate ? this.watchDate.format(format) : "<not defined>";
-	};
-
-	this.formatRating = () => {
-		return this.rating ? this.rating : "<not assigned>";
-	};
+const isSeenLastMonth = (film) => {
+  if ('watchDate' in film && film.watchDate) {  // Accessing watchDate only if defined
+    const diff = dayjs(film.watchDate).diff(dayjs(), 'month')   // watchDate is kept as a string (or null value) in the film object
+    const isLastMonth = diff <= 0 && diff > -1;      // last month
+    return isLastMonth;
+  }
 }
 
-export function FilmLibrary() {
-	// open the database connection
-	const db = new sqlite.Database("films.db", (err) => {
-		if (err) throw err;
-	});
+const convertFilmFromDbRecord = (dbRecord) => {
+  const film = {};
+  film.id = dbRecord.id;
+  film.title = dbRecord.title;
+  film.favorite = dbRecord.favorite;
+  // Note that the column name is all lowercase, JSON object requires camelCase as per the API specifications we defined.
+  // We convert "watchdate" to the camelCase version ("watchDate").
 
-	this.closeDB = () => {
-		try {
-			db.close();
-		} catch (error) {
-			console.error(`Impossible to close the database! ${error}`);
-		}
-	};
 
-	this.getFilm = (id) => {
-		return new Promise((resolve, reject) => {
-			const query = "SELECT * FROM films WHERE id = ?";
+  // FIXME
+  // Also, here you decide how to transmit an empty date in JSON. We decided to use the empty string.
+  // Using the null value is an alternative, but the API documentation must be updated and the client must be modified accordingly.
+  //film.watchDate = dbRecord.watchdate ? dayjs(dbRecord.watchdate) : "";
+  film.watchDate = dbRecord.watchdate;
+  film.rating = dbRecord.rating;
 
-			// db.get is used to retrieve a single row from the database, since id is unique
-			db.get(query, [id], (err, row) => {
-				if (err) {
-					reject(err);
-				} else if (!row) {
-					// If the row does not exist, resolve with an error message (or we could reject with an error, but in this case we want to handle it as a normal case, not as an exception)
-					resolve({ error: "Film non trovato" });
-				} else {
-					// If the row exists, create and resolve with the single Film object
-					const film = new Film(
-						row.id,
-						row.title,
-						row.favorite == 1,
-						row.watchdate,
-						row.rating,
-					);
-					resolve(film);
-				}
-			});
-		});
-	};
-
-	this.getAll = () => {
-		return new Promise((resolve, reject) => {
-			const query = "SELECT * FROM films";
-			db.all(query, (err, rows) => {
-				if (err) {
-					reject(err);
-				} else {
-					// sqlite does not support booleans so we cast using r.favorite == 1, by comparison
-					const films = rows.map(
-						(r) =>
-							// id, title, favorite, watchdate and rating are the columns of the films table
-							new Film(r.id, r.title, r.favorite == 1, r.watchdate, r.rating),
-					);
-					resolve(films);
-				}
-			});
-		});
-	};
-
-	this.getFavorites = () => {
-		return new Promise((resolve, reject) => {
-			const query = "SELECT * FROM films WHERE favorite = 1";
-			db.all(query, (err, rows) => {
-				if (err) {
-					reject(err);
-				} else {
-					// sqlite does not support booleans so we cast using r.favorite == 1, by comparison
-					const films = rows.map(
-						(r) =>
-							// id, title, favorite, watchdate and rating are the columns of the films table
-							new Film(r.id, r.title, r.favorite == 1, r.watchdate, r.rating),
-					);
-					resolve(films);
-				}
-			});
-		});
-	};
-
-	this.getWatchedToday = () => {
-		return new Promise((resolve, reject) => {
-			const query = "SELECT * FROM films WHERE watchdate = ?";
-			const today = dayjs().format("YYYY-MM-DD");
-			db.all(query, [today], (err, rows) => {
-				if (err) {
-					reject(err);
-				} else {
-					// sqlite does not support booleans so we cast using r.favorite == 1, by comparison
-					const films = rows.map(
-						(r) =>
-							// id, title, favorite, watchdate and rating are the columns of the films table
-							new Film(r.id, r.title, r.favorite == 1, r.watchdate, r.rating),
-					);
-					resolve(films);
-				}
-			});
-		});
-	};
-
-	this.getBeforeThan = (date) => {
-		return new Promise((resolve, reject) => {
-			const query = "SELECT * FROM films WHERE watchdate < ?";
-			db.all(query, [date.format("YYYY-MM-DD")], (err, rows) => {
-				if (err) {
-					reject(err);
-				} else {
-					// sqlite does not support booleans so we cast using r.favorite == 1, by comparison
-					const films = rows.map(
-						(r) =>
-							// id, title, favorite, watchdate and rating are the columns of the films table
-							new Film(r.id, r.title, r.favorite == 1, r.watchdate, r.rating),
-					);
-					resolve(films);
-				}
-			});
-		});
-	};
-
-	this.getRateGreater = (rating) => {
-		return new Promise((resolve, reject) => {
-			const query = "SELECT * FROM films WHERE rating >= ?";
-			db.all(query, [rating], (err, rows) => {
-				if (err) {
-					reject(err);
-				} else {
-					// sqlite does not support booleans so we cast using r.favorite == 1, by comparison
-					const films = rows.map(
-						(r) =>
-							// id, title, favorite, watchdate and rating are the columns of the films table
-							new Film(r.id, r.title, r.favorite == 1, r.watchdate, r.rating),
-					);
-					resolve(films);
-				}
-			});
-		});
-	};
-
-	this.getWithWord = (string) => {
-		return new Promise((resolve, reject) => {
-			const query = "SELECT * FROM films WHERE title LIKE ?";
-			db.all(query, [`%${string}%`], (err, rows) => {
-				if (err) {
-					reject(err);
-				} else {
-					// sqlite does not support booleans so we cast using r.favorite == 1, by comparison
-					const films = rows.map(
-						(r) =>
-							// id, title, favorite, watchdate and rating are the columns of the films table
-							new Film(r.id, r.title, r.favorite == 1, r.watchdate, r.rating),
-					);
-					resolve(films);
-				}
-			});
-		});
-	};
-
-	this.addFilm = (film) => {
-		return new Promise((resolve, reject) => {
-			// film.id is ignored since the unique id can only come from the database
-			const query =
-				"INSERT INTO films(title, favorite, watchdate, rating) VALUES(?, ?, ?, ?)";
-			const parameters = [
-				film.title,
-				film.favorite,
-				film.watchDate.format("YYYY-MM-DD"),
-				film.rating,
-			];
-			db.run(query, parameters, function (err) {
-				// use function; this.lastID would not be available with an arrow function here
-				if (err) reject(err);
-				else resolve(this.lastID);
-			});
-		});
-	};
-
-	this.deleteFilm = (id) => {
-		return new Promise((resolve, reject) => {
-			const query = "DELETE FROM films WHERE id = ?";
-			db.run(query, [id], function (err) {
-				// use function; this.lastID would not be available with an arrow function here
-				if (err) reject(err);
-				// returning the number of affected rows: if nothing is updated, returns 0
-				else resolve(this.changes);
-			});
-		});
-	};
-
-	this.deleteWatchDates = (id) => {
-		return new Promise((resolve, reject) => {
-			const query = "UPDATE films SET watchdate = NULL";
-			db.run(query, [id], function (err) {
-				// use function; this.lastID would not be available with an arrow function here
-				if (err) reject(err);
-				// returning the number of affected rows: if nothing is updated, returns 0
-				else resolve(this.changes);
-			});
-		});
-	};
+  /* // ALTERNATIVE:
+  // WARNING: the column names in the database are all lowercases. JSON object requires camelCase as per the API specifications we defined.
+  // We convert "watchdate" to the camelCase version ("watchDate").
+  // Object.assign will copy all fields returned by the DB (i.e., all columns if SQL SELECT did not specify otherwise)
+  const film = Object.assign({}, e, { watchDate: e.watchdate? dayjs(e.watchdate) : "" });  // adding camelcase "watchDate"
+  delete film.watchdate;  // removing lowercase "watchdate"
+  */
+  return film;
 }
+
+
+/** NOTE
+ * return error messages as json object { error: <string> }
+ */
+
+
+// This function retrieves the whole list of films from the database.
+const listFilms = (filter) => {
+  return new Promise((resolve, reject) => {
+    const sql = 'SELECT * FROM films';
+    db.all(sql, (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        const films = rows.map((e) => {
+          const film = convertFilmFromDbRecord(e);
+          delete film.watchdate;  // removing lowercase "watchdate"
+          return film;
+        });
+
+        // Check if a filter is specified, otherwise just return the complete list.
+        if (filter) {
+          // WARNING: if implemented as if(filterValues[filter]) returns true also for filter = 'constructor' but then .filterFunction does not exists
+          if (filterValues.hasOwnProperty(filter))
+            resolve(films.filter(filterValues[filter].filterFunction));
+          else
+            reject({ error: "The specified filter is not available" });
+          return;  // Do not forget return here!
+        }
+        resolve(films);
+      }
+    });
+  });
+};
+  
+// This function retrieves a film given its id.
+const getFilm = (id) => {
+  return new Promise((resolve, reject) => {
+    const sql = 'SELECT * FROM films WHERE id=?';
+    db.get(sql, [id], (err, row) => {
+      if (err) {
+        reject(err);
+      } else {
+        if (row == undefined) {
+          resolve({ error: 'Film not found.' });
+        } else {
+          const film = convertFilmFromDbRecord(row);
+          resolve(film);
+        }
+      }
+    });
+  });
+};
+
+
+/**
+ * This function adds a new film in the database.
+ * The film id is added automatically by the DB, and it is returned as this.lastID.
+ */
+const createFilm = (film) => {
+  // our database is configured to have a NULL value for films without rating
+  if (film.rating <= 0)
+    film.rating = null;
+  if (film.watchDate == "")
+    film.watchDate = null;
+
+  return new Promise((resolve, reject) => {
+    const sql = 'INSERT INTO films (title, favorite, watchDate, rating) VALUES(?, ?, ?, ?)';
+    db.run(sql, [film.title, film.favorite, film.watchDate, film.rating], function (err) {
+      if (err) {
+        reject(err);
+      } else {
+        // Returning the newly created object with the DB additional properties (i.e., unique id) to the client.
+        resolve(getFilm(this.lastID));
+      }
+    });
+  });
+};
+
+// This function updates an existing film given its id and the new properties.
+const updateFilm = (id, film) => {
+  return new Promise((resolve, reject) => {
+    const sql = 'UPDATE films SET title = ?, favorite = ?, watchDate = ?, rating = ? WHERE id = ?';
+    db.run(sql, [film.title, film.favorite, film.watchDate, film.rating, id], function (err) {
+      if (err) {
+        reject(err);
+      } else {
+        if (this.changes !== 1) {
+          resolve({ error: 'Film not found.' });
+        } else {
+          resolve(getFilm(id));
+        }
+      }
+    });
+  });
+};
+
+// This function updates an existing rating of a film given its id.
+const updateFilmRating = (id, deltaRating) => {
+  console.log(`id: ${id} deltaRating: ${deltaRating}`);
+  return new Promise((resolve, reject) => {
+    const sql = 'UPDATE films SET rating=rating+? WHERE id = ?';
+    db.run(sql, [deltaRating, id], function (err) {
+      if (err) {
+        reject(err);
+      } else {
+        if (this.changes !== 1) {
+          resolve({ error: 'Film not found.' });
+        } else {
+          resolve(getFilm(id));
+        }
+      }
+    });
+  });
+};
+
+// This function deletes an existing film given its id.
+const deleteFilm = (id) => {
+  return new Promise((resolve, reject) => {
+    const sql = 'DELETE FROM films WHERE id = ?';
+    db.run(sql, [id], function (err) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(this.changes);
+      }
+    });
+  });
+}
+
+export default { listFilms, getFilm, createFilm, updateFilm, 
+    updateFilmRating, deleteFilm };

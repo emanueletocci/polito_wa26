@@ -34,7 +34,7 @@ A film object is represented in JSON as follows:
 
 ### Get a filtered list of films
 
-* `GET /api/films?filter=value`
+* `GET /api/films`
 * **Description**: Retrieves a filtered list of films. For complex searches or filtering, standard API design uses the `?parameter=value` syntax within a GET operation on the collection.
 * **Request body**: _None_
 * **Response**: `200 OK` (success)
@@ -75,18 +75,18 @@ A film object is represented in JSON as follows:
 ### Update an existing film
 
 * `PUT /api/films/:id`
-* **Description**: Replaces the values of the properties of a specific film.
+* **Description**: Replaces the values of the properties of a specific film. The "id" property, if present in body, must match the one in the URL.
 * **Request body**: A JSON object containing the new film's information
 
 ``` json
-{ "id": 1, "title": "Pulp Fiction", "favorite": 1, "watchDate": "2023-03-11", "rating":** null,}
+{ "id": 1, "title": "Pulp Fiction", "favorite": 1, "watchDate": "2023-03-11", "rating": null,}
 ```
 
 * **Response**: `200 OK` (success)
-* **Response body**: _None_
-* **Error Responses:**  
-  * `404 Not Found` if the film to update does not exist
-  * `422 Unprocessable Entity` if the incoming JSON payload contains invalid data formats.
+* **Response body**: The object as represented in the database
+* **Error Responses:** 
+  - `503 Service Unavailable` (database error)
+  - `422 Unprocessable Content`
 
 ### Delete a film
 
@@ -95,7 +95,7 @@ A film object is represented in JSON as follows:
 * **Request body**: _None_
 * **Response**: `200 OK` (success)
 * **Response body**: _None_
-* **Error Responses:** `204 Not Found` if the film to delete does not exist.
+* **Error Responses:** `503 Service Unavailable` (database error)
 
 ### Mark a film as favorite/unfavorite
 
