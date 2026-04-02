@@ -5,8 +5,9 @@ GET http://localhost:3001/api/films HTTP/1.1
 ###
 
 ## Retrieve a specific film specifing its ID.
-GET http://localhost:3001/api/films/{-5} HTTP/1.1
+GET http://localhost:3001/api/films/{{$randomInt 1 7}} HTTP/1.1
 ###
+
 
 ## Retrieve all the films with a specified filter (in this example "unseen").
 GET http://localhost:3001/api/films?filter=unseen HTTP/1.1
