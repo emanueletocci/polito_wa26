@@ -33,10 +33,12 @@ Material for the course _Web Applications_ (in English) for the Master Degree in
 - [JS in the browser: DOM, forms, events](slides/3-04-JS-browser.pdf)
 - [JS browser security: Cross-Site Scripting (XSS)](slides/3-05-browser-security-XSS.pdf)
 - [Fetch API](slides/3-06-fetch.pdf)
-- ...
 
 ### React
 
+- [React introduction](slides/4-01-React-intro.pdf)
+- [React elements and JSX](slides/4-02-Elements-and-JSX.pdf)
+- [React state](slides/4-03-Components-and-state-management.pdf)
 - ...
 
 ## Exercises and examples in class
@@ -51,3 +53,4 @@ Material for the course _Web Applications_ (in English) for the Master Degree in
 - Lab 4: [API security](labs/lab04-API-server.pdf)
 - Lab 5: [HTML, CSS](labs/lab05-html-css.pdf)
 - Lab 6: [JS in browser](labs/lab06-js-browser.pdf)
+- Lab 7: [Restructure app using React](labs/lab07-getting-started-react.pdf)
