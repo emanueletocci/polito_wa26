@@ -24,6 +24,7 @@ Material for the course _Web Applications_ (in English) for the Master Degree in
 - [Express.js](slides/2-02-Express.pdf)
 - [HTTP APIs](slides/2-03-API.pdf)
 - [API security](slides/2-04-API-security.pdf)
+- ...
  
 ### Browsers and client-side applications
 
@@ -42,7 +43,7 @@ Material for the course _Web Applications_ (in English) for the Master Degree in
 - [React forms](slides/4-04-Forms.pdf)
 - [React context](slides/4-05-Context.pdf)
 - [React router](slides/4-06-React-Router.pdf)
-- ...
+- [React lifecycle](slides/4-07-LifeCycle.pdf)
 
 ## Exercises and examples in class
 
