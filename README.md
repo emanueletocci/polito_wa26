@@ -62,4 +62,5 @@ Material for the course _Web Applications_ (in English) for the Master Degree in
 - Lab 8: [React state](labs/lab08-react-state.pdf)
 - Lab 9: [React forms](labs/lab09-forms.pdf)
 - Lab 10: [React router](labs/lab10-router.pdf)
+- Lab 11: [Loading data from server](labs/lab11-loading-data-from-server.pdf)
   
