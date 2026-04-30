@@ -24,6 +24,7 @@ Material for the course _Web Applications_ (in English) for the Master Degree in
 - [Express.js](slides/2-02-Express.pdf)
 - [HTTP APIs](slides/2-03-API.pdf)
 - [API security](slides/2-04-API-security.pdf)
+- [CORS](slides/2-05-CORS_and_security.pdf)
 - ...
  
 ### Browsers and client-side applications
