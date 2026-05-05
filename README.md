@@ -25,6 +25,7 @@ Material for the course _Web Applications_ (in English) for the Master Degree in
 - [HTTP APIs](slides/2-03-API.pdf)
 - [API security](slides/2-04-API-security.pdf)
 - [CORS](slides/2-05-CORS_and_security.pdf)
+- [Authentication](slides/2-06-Authentication.pdf)
 - ...
  
 ### Browsers and client-side applications
