@@ -1,128 +1,154 @@
-# APIs Documentation
+# Lab 04 - APIs with Express
 
-## Objects and Entities
+## List of APIs offered by the server
 
-### Film
+Provide a short description for API with the required parameters, follow the proposed structure.
 
-A film object is represented in JSON as follows:
+* [HTTP Method] [URL, with any parameter]
+* [One-line about what this API is doing]
+* [Sample request, with body (if any)]
+* [Sample response, with body (if any)]
+* [Error responses, if any]
 
-```json
-{
-  "id": 1,
-  "title": "Pulp Fiction",
-  "favorite": 1,
-  "watchDate": "2023-03-11",
-  "rating": null
-}
-```
+### Film Management
 
-### APIs
-
-### Get a film by `id`
-
-* `GET /api/films/:id`
-* **Description**: Get the properties of a single Film object
-* **Request body**: _None_
-* **Response**: `200 OK` (success)
-* **Response body**: A single film object
-
-``` json
-{ "id": 1, "title": "Pulp Fiction", "favorite": 1, "watchDate": "2023-03-11", "rating":** null,}
-```
-
-* **Error Responses:** `404 Not Found` if the film with the specified identifier does not exist in the database.
-
-### Get a filtered list of films
+#### Get all films
 
 * `GET /api/films`
-* **Description**: Retrieves a filtered list of films. For complex searches or filtering, standard API design uses the `?parameter=value` syntax within a GET operation on the collection.
-* **Request body**: _None_
-* **Response**: `200 OK` (success)
-* **Response body**: Array of objects, each describing one film.
+* Description: Get the full list of films or the films that match the optional query filter parameter `?filter=`
+* Request body: _None_
+* Request query parameter: _filter_ name of the filter to apply (all, favorite, best, lastmonth, unseen)
+* Response: `200 OK` (success)
+* Response body: Array of objects, each describing one film. Note that absence of values is represented as null value in json.
 
 ``` json
 [
-    { "id": 1, "title": "Pulp Fiction", "favorite": 1, "watchDate": "2023-03-11", "rating": null, },
-    ..
+  {
+    "id": 1,
+    "title": "Pulp Fiction",
+    "favorite": 1,
+    "watchDate": "2023-03-11",
+    "rating": null,
+  },
+  {
+    "id": 2,
+    "title": "21 Grams",
+    "favorite": 1,
+    "watchDate": null,
+    "rating": 4,
+  },
+  ...
 ]
 ```
 
-* **Query parameters**:
-  * filter, allowed values:
-    * _favorite_: only films marked as favorite
-    * _best_: only films with rating equal to 5
-    * _lastmonth_: only films watched in the last 30 days
-    * _unseen_: only films with watchDate equal to null
-    * _all_: all films
+* Error responses:  `500 Internal Server Error` (generic error)
 
-* **Error Responses:** `422 Unprocessable Entity` if the query parameters fail formal validation checks.
+#### Get film by id
 
-### Create a film
+* `GET /api/films/:id`
+* Description: Get the film corresponding to the id 
+* Request body: _None_
+* Response: `200 OK` (success)
+* Response body: One object describing the required film:
+
+``` JSON
+[
+  {
+    "id": 2,
+    "title": "21 Grams",
+    "favorite": 1,
+    "watchDate": "2023-03-17",
+    "rating": 4,
+  }
+]
+```
+
+* Error responses:  `500 Internal Server Error` (generic error), `404 Not Found` (not present or unavailable)
+
+#### Create a new film
 
 * `POST /api/films`
-* **Description**: Add a new film into films collection
-* **Request body**: A JSON object containing the new film's information (without the ID, which is typically assigned by the database)
+* Description: Create a new film
+* Request body: description of the object to add (film id value is not required and it is ignored)
 
-``` json
-{"title": "Pulp Fiction", "favorite": 1, "watchDate": "2023-03-11", "rating":** null,}
+``` JSON
+{
+    "title": "21 Grams",
+    "favorite": 1,
+    "watchDate": "2023-03-17",
+    "rating": 4,
+}
 ```
 
-* **Response**: `201 CREATED` (success)
-* **Response body**: _None_
+* Response: `200 OK` (success)
+* Response body: the object as represented in the database, including the unique id assigned by the database.
 
-* **Error responses**: `422 Unprocessable Entity` if the incoming JSON payload fails formal data correctness validation (e.g., missing required fields, empty strings, or invalid numbers).
+* Error responses: `503 Service Unavailable` (database error), `422 Unprocessable Content` (errors in request body)
 
-### Update an existing film
+#### Update an existing film
 
 * `PUT /api/films/:id`
-* **Description**: Replaces the values of the properties of a specific film. The "id" property, if present in body, must match the one in the URL.
-* **Request body**: A JSON object containing the new film's information
+* Description: Update all values of an existing film, except the id.
+* Request body: description of the object to update. The "id" property, if present in body, must match the one in the URL.
 
-``` json
-{ "id": 1, "title": "Pulp Fiction", "favorite": 1, "watchDate": "2023-03-11", "rating": null,}
+``` JSON
+{
+    "title": "The Matrix",
+    "favorite": 1,
+    "watchDate": "2023-03-31",
+    "rating": 5,
+}
 ```
 
-* **Response**: `200 OK` (success)
-* **Response body**: The object as represented in the database
-* **Error Responses:** 
-  - `503 Service Unavailable` (database error)
-  - `422 Unprocessable Content`
+* Response: `200 OK` (success)
+* Response body: the object as represented in the database
 
-### Delete a film
+* Error responses: `503 Service Unavailable` (database error), `422 Unprocessable Content` (errors in request body)
+
+#### Delete an existing film
 
 * `DELETE /api/films/:id`
-* **Description**: Deletes the specific element identified by its `:id`, from the films collection
-* **Request body**: _None_
-* **Response**: `200 OK` (success)
-* **Response body**: _None_
-* **Error Responses:** `503 Service Unavailable` (database error)
+* Description: Delete an existing film
+* Request body: _None_
 
-### Mark a film as favorite/unfavorite
+* Response: `200 OK` (success)
+* Response body: _None_ 
 
+* Error responses:  `503 Service Unavailable` (database error)
+
+#### Change the rating of an existing film 
+
+* `POST /api/films/change-rating`
+* Description: Change the rating value of an existing film. If the provided delta yields a result <1 or >5, the value is clipped to 1 or 5. If the rating is not yet set, the API will return an error.
+* Request body: desired variation of the rating
+
+``` JSON
+{
+    "id": 2,
+    "deltaRating": -1,
+}
+```
+
+* Response: `200 OK` (success)
+* Response body: the object as represented in the database after the operation
+
+* Error responses: `503 Service Unavailable` (database error), `422 Unprocessable Content` (errors in request body)
+
+#### Mark a film as favorite or unfavorite
 * `PUT /api/films/:id/favorite`
-* **Description**: Update an existing film to toggle its favorite status.
-* **Request body**:  A JSON object containing the new favorite status (1 for true, 0 for false).
+* Description: Update (i.e., overwrite) the property values of an existing film (except the id which cannot be modified)
+* Request body: new values of the properties
 
-``` json
-{ "favorite": 0 }
+``` JSON
+{
+    "id": 2,
+    "rating": 5,
+    "favorite": 0,
+    ...
+}
 ```
 
-* **Response**: `200 OK` (success)
-* **Response body**: _None_
-* **Error Responses:**  
-  * `404 Not Found` if the film does not exist
-  * `422 Unprocessable Entity` if validation fails
+* Response: `200 OK` (success)
+* Response body: the object as represented in the database after the operation
 
-### Change the rating
-
-* `PUT /api/films/:id/rating`
-* **Description**: Change the rating of a specific film by specifying a delta value (i.e., an amount to add or subtract to the rating, such as +1 or -1). Only ratings which are not null can be changed.
-* **Request body**: A JSON object containing the delta value.
-
-``` json
-{ "delta": 1 }
-```
-
-* **Response**: `200 OK` (success)
-* **Response body**: _None_
-* **Error Responses:** `422 Unprocessable Entity` if the film's rating is null and cannot be changed, or if the resulting rating goes out of valid bounds.
+* Error responses: `503 Service Unavailable` (database error)
